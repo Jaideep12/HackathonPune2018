@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Current Balance</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script src="./node_modules/web3/dist/web3.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+
+        <h1>Summary</h1>
+        <span id="countIns"></span>
+
+        <h2 id="instructor"></h2>
+        <span id="insTrans"></span>
+        <hr>
+
+        <h3 id="list" name="list"></h3>
+    </div>
+
+    <button id='view_total' name='view_total'>View Total</button>
+
+    <button id='view_list' name='view_list'>View List</button>
+
+    <div class="container" id="table" name="table">
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+
+
+    <script>
+        if (typeof web3 !== 'undefined') {
+        web3 = new Web3(web3.currentProvider);
+        } else {
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    }
+
+    web3.eth.defaultAccount = web3.eth.accounts[0];
+
+    var Donate = web3.eth.contract([
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"name": "_rev",
+				"type": "uint256"
+			}
+		],
+		"name": "receive",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"name": "_fName",
+				"type": "string"
+			},
+			{
+				"name": "_lName",
+				"type": "string"
+			}
+		],
+		"name": "setDonor",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "countDonors",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "donorAccts",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "getDonor",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"name": "",
+				"type": "string"
+			},
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getDonors",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "list",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "receiverAccts",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "sum",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	}
+]);
+
+    var Donation = Donate.at('0x95a1fc2b2ce34e9e2cbaa24bc2d7b8e609ccba66');
+    console.log(Donation);
+    
+    $("#view_total").click(function() {
+        Donation.sum(web3.eth.defaultAccount,function(error, result) {
+    if (!error) {
+        $("#instructor").html('<p>'+result+'</p>');
+        console.log("*************"+result);
+    } else
+    console.log(error);
+    });
+       
+   
+        });
+
+            $("#view_list").click(function() {
+        Donation.list(function(error, result) {
+    if (!error) {
+        //$("#instructor").html('<p>'+result[0]+'</p>');
+        console.log("*************"+result);
+        
+        $("#table").html('<table border=1><tr><th>Amount</th><th>Name</th>');
+
+        for(i=0;i< result.length;i++){
+            Donation.getDonor(result[i], function(error,result2){
+            $("#table").html('<tr><td>'+result2+'</td><td>'+result2+'</td>');    
+            });
+        }
+
+
+
+
+
+    } else
+    console.log(error);
+    });
+       
+   
+        });
+
+
+
+    $( document ).ready(function() {
+
+        Donation.sum(web3.eth.defaultAccount,function(error, result) {
+    if (!error) {
+        $("#instructor").html('<p>'+result+'</p>');
+        console.log("*************"+result);
+    } else
+    console.log(error);
+    });
+    console.log( "ready!" );
+});
+
+    
+    
+    </script>
+
+</body>
+</html>
